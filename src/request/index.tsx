@@ -31,8 +31,9 @@ class Request {
 
   private axiosInstance: AxiosInstance;
 
-  private refreshTokenFlag = false;
+  private refreshTokenFlag = false; // 是否正在刷新token
   private requestQueue: {
+    //请求队列
     resolve: any;
     config: any;
     type: "reuqest" | "response";
@@ -71,7 +72,7 @@ class Request {
     }
     return Promise.resolve(axiosConfig);
   }
-
+  // 从队列中取出请求
   private requestByQueue() {
     if (!this.requestQueue.length) return;
 
@@ -89,9 +90,12 @@ class Request {
         }
 
         const { config, resolve, type } = record;
+        // 如果相应401 取到config直接再请求一下
         if (type === "response") {
           resolve(await this.request(config));
         } else if (type === "reuqest") {
+          // 如果在请求拦截器中被拦截 只需要执行resolve方法，把config放进去，
+          // 这里需要将新的token放进去
           this.requestingCount += 1;
           const { token } = useGlobalStore.getState();
           config.headers.Authorization = `Bearer ${token}`;
@@ -103,22 +107,22 @@ class Request {
 
   private async refreshToken() {
     const { refreshToken } = useGlobalStore.getState();
-
+    // 如果刷新token 不存在 就跳去登录页
     if (!refreshToken) {
       this.toLoginPage();
     }
-
+    // 调用刷新token接口
     const [error, data] = await loginService.rerefshToken(refreshToken);
-
+    // 如果刷新token失败 就跳去登录页
     if (error) {
       this.toLoginPage();
     }
-
+    // 如果刷新token成功 就更新token
     useGlobalStore.setState({
       refreshToken: data.refreshToken,
       token: data.token,
     });
-
+    // 重置刷新token标识
     this.refreshTokenFlag = false;
 
     this.requestByQueue();
@@ -142,6 +146,7 @@ class Request {
     const { config, status } = error?.response || {};
 
     if (status === 401) {
+      //如果接口是401 把当前接口插入到队列中 然后刷新token
       return new Promise((resolve) => {
         this.requestQueue.unshift({ resolve, config, type: "response" });
         if (this.refreshTokenFlag) return;

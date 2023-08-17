@@ -1,34 +1,59 @@
 import { create } from "zustand";
 import { devtools, persist, createJSONStorage } from "zustand/middleware";
+
 interface State {
   darkMode: boolean;
   collapsed: boolean;
+  lang: string;
   token: string;
   refreshToken: string;
 }
-interface Actions {
-  setDarkMode: (darkMode: boolean) => void;
-  setCollapsed: (collapsed: boolean) => void;
-  setToken: (token: string) => void;
-  setRefreshToken: (refreshToken: string) => void;
+
+interface Action {
+  setDarkMode: (darkMode: State["darkMode"]) => void;
+  setCollapsed: (collapsed: State["collapsed"]) => void;
+  setLang: (lang: State["lang"]) => void;
+  setToken: (lang: State["token"]) => void;
+  setRefreshToken: (lang: State["refreshToken"]) => void;
 }
-export const useGlobalStore = create<State & Actions>()(
+
+export const useGlobalStore = create<State & Action>()(
   devtools(
     persist(
-      (set) => ({
-        darkMode: false,
-        setDarkMode: (darkMode: boolean) => set({ darkMode }),
-        collapsed: false,
-        setCollapsed: (collapsed: boolean) => set({ collapsed }),
-        token: "",
-        setToken: (token: string) => set({ token }),
-        refreshToken: "",
-        setRefreshToken: (refreshToken: string) => set({ refreshToken }),
-      }),
+      (set) => {
+        return {
+          darkMode: false,
+          collapsed: false,
+          lang: "zh",
+          token: "",
+          refreshToken: "",
+          setDarkMode: (darkMode: State["darkMode"]) =>
+            set({
+              darkMode,
+            }),
+          setCollapsed: (collapsed: State["collapsed"]) =>
+            set({
+              collapsed,
+            }),
+          setLang: (lang: State["lang"]) =>
+            set({
+              lang,
+            }),
+          setToken: (token: State["token"]) =>
+            set({
+              token,
+            }),
+          setRefreshToken: (refreshToken: State["refreshToken"]) =>
+            set({
+              refreshToken,
+            }),
+        };
+      },
       {
         name: "globalStore",
         storage: createJSONStorage(() => localStorage),
       }
-    )
+    ),
+    { name: "globalStore" }
   )
 );
